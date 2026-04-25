@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clicker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:wght@200;300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f5f2ee;
+      --ink: #1a1814;
+      --muted: #9e9a94;
+      --accent: #c8a96e;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 3rem;
+      user-select: none;
+    }
+
+    .count {
+      font-family: 'DM Mono', monospace;
+      font-weight: 300;
+      font-size: clamp(4rem, 15vw, 9rem);
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--ink);
+      transition: transform 0.08s ease, color 0.15s ease;
+    }
+
+    .count.bump {
+      transform: scale(1.06);
+      color: var(--accent);
+    }
+
+    .btn {
+      background: none;
+      border: 1.5px solid var(--ink);
+      border-radius: 50%;
+      width: clamp(100px, 22vw, 160px);
+      height: clamp(100px, 22vw, 160px);
+      font-size: clamp(2.4rem, 7vw, 4rem);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 50%;
+      border: 1.5px solid var(--ink);
+      opacity: 0;
+      transform: scale(1);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .btn:active {
+      transform: scale(0.92);
+    }
+
+    .btn.clicked::after {
+      opacity: 1;
+      transform: scale(1.35);
+      opacity: 0;
+    }
+
+    .intro {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 200;
+      font-size: clamp(1rem, 3vw, 1.3rem);
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    .label {
+      font-family: 'DM Mono', monospace;
+      font-weight: 300;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <p class="intro">Click the monkey.</p>
+  <div class="count" id="count">0</div>
+  <span class="label">clicks</span>
+  <button class="btn" id="btn" aria-label="Click the monkey">🐒</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://nbbcnwwtbnvlfwhxrwjl.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable__l-vIcvOou8RJWTodL2_dw_u5gMttU4';
+
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const countEl = document.getElementById('count');
+    const btn = document.getElementById('btn');
+
+    async function loadCount() {
+      const { data, error } = await db.from('clicks').select('count').single();
+      if (!error) countEl.textContent = data.count;
+    }
+
+    async function increment() {
+      const { data, error } = await db.rpc('increment_clicks');
+      if (!error) {
+        countEl.textContent = data;
+        bumpCount();
+      }
+    }
+
+    function bumpCount() {
+      countEl.classList.remove('bump');
+      void countEl.offsetWidth;
+      countEl.classList.add('bump');
+    }
+
+    btn.addEventListener('click', () => {
+      btn.classList.remove('clicked');
+      void btn.offsetWidth;
+      btn.classList.add('clicked');
+      increment();
+    });
+
+    countEl.addEventListener('transitionend', () => {
+      countEl.classList.remove('bump');
+    });
+
+    loadCount();
+  </script>
+
+</body>
+</html>
